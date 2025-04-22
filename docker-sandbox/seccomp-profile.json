@@ -1,0 +1,28 @@
+{
+  "defaultAction": "SCMP_ACT_ALLOW",
+  "architectures": [
+    "SCMP_ARCH_X86_64",
+    "SCMP_ARCH_X86",
+    "SCMP_ARCH_AARCH64"
+  ],
+  "syscalls": [
+    { "name": "mount", "action": "SCMP_ACT_ERRNO" },
+    { "name": "umount", "action": "SCMP_ACT_ERRNO" },
+    { "name": "umount2", "action": "SCMP_ACT_ERRNO" },
+    { "name": "ptrace", "action": "SCMP_ACT_ERRNO" },
+    { "name": "process_vm_readv", "action": "SCMP_ACT_ERRNO" },
+    { "name": "process_vm_writev", "action": "SCMP_ACT_ERRNO" },
+    { "name": "kexec_load", "action": "SCMP_ACT_ERRNO" },
+    { "name": "kexec_file_load", "action": "SCMP_ACT_ERRNO" },
+    { "name": "keyctl", "action": "SCMP_ACT_ERRNO" },
+    { "name": "add_key", "action": "SCMP_ACT_ERRNO" },
+    { "name": "request_key", "action": "SCMP_ACT_ERRNO" },
+    { "name": "mbind", "action": "SCMP_ACT_ERRNO" },
+    { "name": "migrate_pages", "action": "SCMP_ACT_ERRNO" },
+    { "name": "move_pages", "action": "SCMP_ACT_ERRNO" },
+    { "name": "set_mempolicy", "action": "SCMP_ACT_ERRNO" },
+    { "name": "get_mempolicy", "action": "SCMP_ACT_ERRNO" },
+    { "name": "perf_event_open", "action": "SCMP_ACT_ERRNO" },
+    { "name": "uname", "action": "SCMP_ACT_ERRNO" }
+  ]
+}

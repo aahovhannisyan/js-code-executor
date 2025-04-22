@@ -1,0 +1,18 @@
+{
+    "name": "js-code-executor",
+    "version": "1.0.0",
+    "description": "JavaScript code execution sandbox implementations comparing VM and Docker security approaches",
+    "scripts": {
+      "install-all": "cd vm-sandbox && npm install && cd ../docker-sandbox && npm install",
+      "start-vm": "cd vm-sandbox && npm start",
+      "start-docker": "cd docker-sandbox && npm start"
+    },
+    "keywords": [
+      "javascript",
+      "sandbox",
+      "security",
+      "vm",
+      "docker",
+      "code-execution"
+    ]
+}

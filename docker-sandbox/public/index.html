@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure JavaScript Code Executor</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    #code {
+      width: 100%;
+      height: 300px;
+      font-family: monospace;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      resize: vertical;
+    }
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #execute {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #execute:hover {
+      background-color: #45a049;
+    }
+    #execute:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    .status {
+      color: #666;
+    }
+    #result-container {
+      width: 100%;
+    }
+    #result {
+      width: 100%;
+      min-height: 150px;
+      padding: 10px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      overflow: auto;
+    }
+    .error {
+      color: #ff3333;
+    }
+    .success {
+      color: #4CAF50;
+    }
+    .loading {
+      color: #0066cc;
+    }
+    .example-container {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #fff;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+    }
+    .example-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .example {
+      background-color: #f9f9f9;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 5px;
+      font-family: monospace;
+    }
+    .security-info {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #e8f4fd;
+      border-radius: 5px;
+      border: 1px solid #c0e0f7;
+    }
+    .security-title {
+      font-weight: bold;
+      color: #0066cc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Secure JavaScript Code Executor</h1>
+  <p class="subtitle">Code runs in isolated Docker containers with strict resource limits</p>
+  
+  <div class="container">
+    <textarea id="code" placeholder="Enter your JavaScript code here..."></textarea>
+    
+    <div class="controls">
+      <button id="execute">Execute in Container</button>
+      <div class="status" id="status"></div>
+    </div>
+    
+    <div id="result-container">
+      <h3>Result:</h3>
+      <pre id="result">// Result will appear here</pre>
+    </div>
+    
+    <div class="example-container">
+      <div class="example-title">Example Code Snippets (click to use):</div>
+      <div class="example" onclick="setExampleCode('basic')">// Basic example
+const message = 'Hello from the container!';
+const numbers = [1, 2, 3, 4, 5];
+const sum = numbers.reduce((a, b) => a + b, 0);
+
+({ message, numbers, sum });</div>
+      <div class="example" onclick="setExampleCode('object')">// Object manipulation example
+const person = {
+  name: 'John',
+  age: 30,
+  hobbies: ['reading', 'music', 'sports']
+};
+person.location = 'New York';
+delete person.age;
+person;</div>
+      <div class="example" onclick="setExampleCode('fibonacci')">// Fibonacci sequence
+function fibonacci(n) {
+  const sequence = [0, 1];
+  for (let i = 2; i <= n; i++) {
+    sequence[i] = sequence[i-1] + sequence[i-2];
+  }
+  return sequence.slice(0, n+1);
+}
+fibonacci(10);</div>
+      <div class="example" onclick="setExampleCode('malicious')">// This would cause a memory exhaustion attack in VM2
+// But is safely contained by Docker resource limits
+let arr = [];
+try {
+  while(true) {
+    arr.push(new Array(1000000).fill('x'));
+  }
+} catch (e) {
+  return { error: e.message, allocatedArrays: arr.length };
+}</div>
+    </div>
+    
+    <div class="security-info">
+      <div class="security-title">Security Information:</div>
+      <p>This application runs your code in isolated Docker containers with the following security measures:</p>
+      <ul>
+        <li>Strict memory limit (100MB)</li>
+        <li>CPU usage restriction (0.5 cores)</li>
+        <li>Process count limitation</li>
+        <li>No network access</li>
+        <li>5-second execution timeout</li>
+        <li>Container is destroyed after execution</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const codeArea = document.getElementById('code');
+    const executeBtn = document.getElementById('execute');
+    const resultArea = document.getElementById('result');
+    const statusEl = document.getElementById('status');
+
+    executeBtn.addEventListener('click', async () => {
+      const code = codeArea.value;
+      
+      if (!code.trim()) {
+        resultArea.innerHTML = '<span class="error">Please enter some code to execute</span>';
+        return;
+      }
+      
+      // Update UI state
+      executeBtn.disabled = true;
+      statusEl.textContent = 'Creating container...';
+      resultArea.innerHTML = '<span class="loading">Executing code in isolated container, please wait...</span>';
+      
+      try {
+        statusEl.textContent = 'Running code...';
+        const response = await fetch('/execute', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ code }),
+        });
+        
+        statusEl.textContent = 'Processing results...';
+        const data = await response.json();
+        
+        if (data.success && data.result !== undefined) {
+          let resultStr;
+          try {
+            if (typeof data.result === 'object') {
+              resultStr = JSON.stringify(data.result, null, 2);
+            } else {
+              resultStr = String(data.result);
+            }
+          } catch (e) {
+            resultStr = '[Result could not be fully serialized]';
+          }
+          
+          resultArea.innerHTML = `<span class="success">// Success:</span>\n${resultStr}`;
+          statusEl.textContent = 'Execution complete';
+        } else {
+          resultArea.innerHTML = `<span class="error">// Error:</span>\n${data.error || 'Unknown error'}`;
+          statusEl.textContent = 'Execution failed';
+        }
+      } catch (error) {
+        resultArea.innerHTML = `<span class="error">// Server Error:</span>\n${error.message}`;
+        statusEl.textContent = 'Server error';
+      } finally {
+        // Re-enable execute button
+        executeBtn.disabled = false;
+      }
+    });
+    
+    function setExampleCode(type) {
+      switch (type) {
+        case 'basic':
+          codeArea.value = document.querySelector('.example:nth-child(2)').textContent;
+          break;
+        case 'object':
+          codeArea.value = document.querySelector('.example:nth-child(3)').textContent;
+          break;
+        case 'fibonacci':
+          codeArea.value = document.querySelector('.example:nth-child(4)').textContent;
+          break;
+        case 'malicious':
+          codeArea.value = document.querySelector('.example:nth-child(5)').textContent;
+          break;
+      }
+    }
+  </script>
+</body>
+</html>

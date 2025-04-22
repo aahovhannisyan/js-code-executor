@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JavaScript Code Executor (Native VM)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .warning {
+      background-color: #fff3cd;
+      color: #856404;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ffeeba;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    #code {
+      width: 100%;
+      height: 300px;
+      font-family: monospace;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      resize: vertical;
+    }
+    #execute {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      align-self: flex-start;
+    }
+    #execute:hover {
+      background-color: #45a049;
+    }
+    .output-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .output-section {
+      width: 100%;
+    }
+    .output-header {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    #result, #console-output {
+      width: 100%;
+      min-height: 100px;
+      padding: 10px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      overflow: auto;
+    }
+    .error {
+      color: #ff3333;
+    }
+    .success {
+      color: #4CAF50;
+    }
+    .example-container {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #fff;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+    }
+    .example-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .example {
+      background-color: #f9f9f9;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 5px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>JavaScript Code Executor</h1>
+  <p class="subtitle">Using Node.js Native VM Module</p>
+  
+  <div class="warning">
+    <strong>Security Warning:</strong> This implementation uses Node's native VM module which provides only limited sandboxing. It's vulnerable to various sandbox escape techniques and should be used only for trusted code.
+  </div>
+  
+  <div class="container">
+    <textarea id="code" placeholder="Enter your JavaScript code here..."></textarea>
+    <button id="execute">Execute</button>
+    
+    <div class="output-container">
+      <div class="output-section">
+        <div class="output-header">Result:</div>
+        <pre id="result">// Result will appear here</pre>
+      </div>
+      
+      <div class="output-section">
+        <div class="output-header">Console Output:</div>
+        <pre id="console-output">// Console output will appear here</pre>
+      </div>
+    </div>
+    
+    <div class="example-container">
+      <div class="example-title">Example Code Snippets (click to use):</div>
+      <div class="example" onclick="setExampleCode('array')">// Array manipulation example
+const numbers = [1, 2, 3, 4, 5];
+const doubled = numbers.map(num => num * 2);
+console.log('Original array:', numbers);
+console.log('Doubled values:', doubled);
+doubled;</div>
+      <div class="example" onclick="setExampleCode('object')">// Object manipulation example
+const person = {
+  name: 'John',
+  age: 30,
+  hobbies: ['reading', 'music', 'sports']
+};
+person.location = 'New York';
+delete person.age;
+console.log('Person object:', person);
+person;</div>
+      <div class="example" onclick="setExampleCode('recursive')">// Fibonacci sequence (recursive)
+function fibonacci(n) {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+console.log('Calculating Fibonacci sequence...');
+for (let i = 0; i < 10; i++) {
+  console.log(`fibonacci(${i}) = ${fibonacci(i)}`);
+}
+fibonacci(10);</div>
+      <div class="example" onclick="setExampleCode('sandbox')">// Attempting to access Node.js internals
+console.log('Trying to access various Node.js objects:');
+console.log('process:', typeof process);
+console.log('require:', typeof require);
+console.log('global:', typeof global);
+console.log('__dirname:', typeof __dirname);
+
+// Try to escape the sandbox
+try {
+  const constructor = (function(){}).constructor;
+  const nodeProcess = constructor('return process')();
+  console.log('Escaped sandbox?', nodeProcess ? true : false);
+} catch (e) {
+  console.log('Escape attempt failed:', e.message);
+}
+
+"Sandbox test complete";</div>
+    </div>
+  </div>
+
+  <script>
+    const codeArea = document.getElementById('code');
+    const executeBtn = document.getElementById('execute');
+    const resultArea = document.getElementById('result');
+    const consoleOutput = document.getElementById('console-output');
+
+    executeBtn.addEventListener('click', async () => {
+      const code = codeArea.value;
+      
+      if (!code.trim()) {
+        resultArea.innerHTML = '<span class="error">Please enter some code to execute</span>';
+        consoleOutput.textContent = '';
+        return;
+      }
+      
+      resultArea.innerHTML = 'Executing...';
+      consoleOutput.textContent = '';
+      
+      try {
+        const response = await fetch('/execute', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ code }),
+        });
+        
+        const data = await response.json();
+        
+        // Display console output
+        if (data.logs && data.logs.length > 0 || data.errors && data.errors.length > 0) {
+          let output = '';
+          
+          if (data.logs && data.logs.length > 0) {
+            output += data.logs.join('\n');
+          }
+          
+          if (data.errors && data.errors.length > 0) {
+            if (output) output += '\n';
+            output += data.errors.map(err => `Error: ${err}`).join('\n');
+          }
+          
+          consoleOutput.textContent = output;
+        } else {
+          consoleOutput.textContent = '// No console output';
+        }
+        
+        // Display result or error
+        if (data.success) {
+          resultArea.innerHTML = `<span class="success">// Success:</span>\n${data.result !== undefined ? data.result : 'undefined'}`;
+        } else {
+          resultArea.innerHTML = `<span class="error">// Error:</span>\n${data.error}`;
+        }
+      } catch (error) {
+        resultArea.innerHTML = `<span class="error">// Server Error:</span>\n${error.message}`;
+        consoleOutput.textContent = '// No console output due to server error';
+      }
+    });
+    
+    function setExampleCode(type) {
+      switch (type) {
+        case 'array':
+          codeArea.value = document.querySelector('.example:nth-child(2)').textContent;
+          break;
+        case 'object':
+          codeArea.value = document.querySelector('.example:nth-child(3)').textContent;
+          break;
+        case 'recursive':
+          codeArea.value = document.querySelector('.example:nth-child(4)').textContent;
+          break;
+        case 'sandbox':
+          codeArea.value = document.querySelector('.example:nth-child(5)').textContent;
+          break;
+      }
+    }
+  </script>
+</body>
+</html>
